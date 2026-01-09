@@ -73,14 +73,14 @@ export function AvatarPanel() {
          <div className="absolute inset-0 -z-10 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]"></div>
       </div>
 
-      <Card className="lg:col-span-1 border-white/10 bg-background/30 backdrop-blur-xl h-full flex flex-col">
-        <CardContent className="p-4 flex flex-col h-full gap-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+      <Card className="lg:col-span-1 border-white/10 bg-background/30 backdrop-blur-xl h-full flex flex-col overflow-hidden">
+        <CardContent className="p-4 flex flex-col flex-1 min-h-0 gap-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-white/10 shrink-0">
             <Bot className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-foreground">AI Companion</h3>
           </div>
 
-          <ScrollArea className="flex-1 w-full" type="always">
+          <ScrollArea className="flex-1 w-full min-h-0" type="always">
             <div className="space-y-4 pr-4">
               {messages.map((msg: any) => (
                 <div
@@ -129,7 +129,7 @@ export function AvatarPanel() {
             </div>
           </ScrollArea>
 
-          <div className="relative pt-2">
+          <div className="relative pt-4 border-t border-white/10 shrink-0">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
