@@ -24,7 +24,7 @@ export class LipSyncAnalyzer {
   }
 
   public update() {
-      this.analyser.getByteFrequencyData(this.dataArray);
+      this.analyser.getByteFrequencyData(this.dataArray as any);
 
       // --- 1. Compute Energy in Specific Formant Bands ---
       // Bin size = 48000 / 1024 = ~46.8 Hz

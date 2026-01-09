@@ -161,7 +161,7 @@ export default function VrmViewer() {
              if (rightLowerArm) rightLowerArm.rotation.x = 0.15;
         }
 
-        console.log("VRM Loaded Successfully");
+
       },
       (progress) => {},
       (error) => console.error("VRM Load Error", error)

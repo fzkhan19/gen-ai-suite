@@ -89,7 +89,7 @@ async function generateImage(vertexAI: VertexAI, prompt: string, params: any, cr
              throw new Error("No valid credentials found (API Key or Service Account).");
         }
 
-        console.log("Calling Imagen 3 REST API:", url.split('?')[0]); // Log without key
+// Calling Imagen 3 REST API
 
         const response = await fetch(url, {
             method: 'POST',
@@ -126,7 +126,7 @@ async function generateImage(vertexAI: VertexAI, prompt: string, params: any, cr
 }
 
 async function generateVideo(vertexAI: VertexAI, prompt: string, params: any, credentials?: any): Promise<NextResponse> {
-    console.log("Starting Video Generation via REST (Veo 2.0)...");
+    // Starting Video Generation via REST (Veo 2.0)
 
     // Configuration
     const projectId = process.env.PROJECT_ID || 'your-project-id';
@@ -164,7 +164,7 @@ async function generateVideo(vertexAI: VertexAI, prompt: string, params: any, cr
             }
         };
 
-        console.log("Calling Veo API:", apiEndpoint);
+// Calling Veo API
 
         // 3. Initiate Generation
         const initialResponse = await fetch(apiEndpoint, {
@@ -190,7 +190,7 @@ async function generateVideo(vertexAI: VertexAI, prompt: string, params: any, cr
         // NOTE: If the response contains `predictions`, it's done.
         // If it sends back a valid response with a file URI, we can use it.
 
-        console.log("Veo Initial Response:", JSON.stringify(initialData).substring(0, 500)); // Log first 500 chars
+        // Veo Initial Response received
 
         if (initialData.predictions && initialData.predictions.length > 0) {
             const prediction = initialData.predictions[0];
