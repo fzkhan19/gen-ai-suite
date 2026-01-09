@@ -45,7 +45,9 @@ export function AvatarPanel() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-        const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        // Fix: Target the actual viewport element within the ScrollArea component
+        // Using the data-slot attribute that matches the definition in components/ui/scroll-area.tsx
+        const scrollContainer = scrollAreaRef.current.querySelector('[data-slot="scroll-area-viewport"]');
         if (scrollContainer) {
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }
@@ -116,14 +118,17 @@ export function AvatarPanel() {
                 </div>
               ))}
               {loading && (
-                 <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
+                 <div className="flex gap-3 justify-start items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30 animate-pulse">
                        <Bot className="w-5 h-5 text-primary" />
                      </div>
-                     <div className="bg-white/5 rounded-2xl px-4 py-2 flex items-center gap-1 h-9">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                     <div className="bg-white/5 rounded-2xl px-4 py-2 flex items-center gap-2 h-9 border border-white/5">
+                        <span className="text-xs text-white/50 font-medium">Thinking</span>
+                        <div className="flex gap-1">
+                          <span className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                          <span className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                          <span className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                        </div>
                      </div>
                  </div>
               )}
