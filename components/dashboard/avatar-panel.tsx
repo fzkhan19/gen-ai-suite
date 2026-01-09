@@ -36,7 +36,7 @@ export function AvatarPanel() {
     sendMessage
   } = useAvatarStore();
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = React.useState(false);
 
   useEffect(() => {
@@ -44,15 +44,8 @@ export function AvatarPanel() {
   }, []);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-        // Fix: Target the actual viewport element within the ScrollArea component
-        // Using the data-slot attribute that matches the definition in components/ui/scroll-area.tsx
-        const scrollContainer = scrollAreaRef.current.querySelector('[data-slot="scroll-area-viewport"]');
-        if (scrollContainer) {
-            scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }
-    }
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   if (!mounted) return null;
 
@@ -87,8 +80,8 @@ export function AvatarPanel() {
             <h3 className="font-semibold text-foreground">AI Companion</h3>
           </div>
 
-          <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
-            <div className="space-y-4">
+          <ScrollArea className="flex-1 w-full" type="always">
+            <div className="space-y-4 pr-4">
               {messages.map((msg: any) => (
                 <div
                   key={msg.id}
@@ -132,6 +125,7 @@ export function AvatarPanel() {
                      </div>
                  </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 

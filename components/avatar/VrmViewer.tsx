@@ -1,6 +1,7 @@
 "use client";
 
 import {useAvatarStore} from "@/store/useAvatarStore";
+import {LipSyncAnalyzer} from "@/utils/LipSyncAnalyzer";
 import {VRM, VRMLoaderPlugin, VRMUtils} from "@pixiv/three-vrm";
 import {MToonMaterialLoaderPlugin} from "@pixiv/three-vrm-materials-mtoon";
 import {useEffect, useRef} from "react";
@@ -9,12 +10,18 @@ import {GLTFLoader, OrbitControls} from "three-stdlib";
 
 export default function VrmViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { responseAudio, setIsSpeaking } = useAvatarStore();
+  const { responseAudio, isSpeaking, setIsSpeaking } = useAvatarStore();
+
 
   // Audio Refs
   const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
+  const lipSyncRef = useRef<LipSyncAnalyzer | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const isSpeakingRef = useRef(isSpeaking);
+
+  useEffect(() => {
+      isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
 
   useEffect(() => {
      if (responseAudio) {
@@ -47,14 +54,12 @@ export default function VrmViewer() {
           const source = ctx.createBufferSource();
           source.buffer = audioBuffer;
 
-          const analyser = ctx.createAnalyser();
-          analyser.fftSize = 256;
+          source.connect(ctx.destination);
 
-          source.connect(analyser);
-          analyser.connect(ctx.destination);
+          // Initialize Lip Sync Analyzer
+          lipSyncRef.current = new LipSyncAnalyzer(ctx, source);
 
           sourceRef.current = source;
-          analyserRef.current = analyser;
 
           source.onended = () => {
               setIsSpeaking(false);
@@ -169,6 +174,16 @@ export default function VrmViewer() {
     const clock = new THREE.Clock();
     const dataArray = new Uint8Array(256);
 
+    // Lerp Helper
+    const lerp = (start: number, end: number, factor: number) => {
+        return start + (end - start) * factor;
+    };
+
+    // State for smooth transitions
+    let currentAh = 0;
+    let currentOh = 0;
+    let currentIh = 0;
+
     const animate = () => {
       requestAnimationFrame(animate);
 
@@ -179,40 +194,47 @@ export default function VrmViewer() {
         // @ts-ignore
         currentVrm.update(delta);
 
-        // Lip Sync & Expressions
-        // @ts-ignore
-        if (currentVrm.expressionManager) {
-            let volume = 0;
-            let bass = 0;
-            let treble = 0;
+        // --- IDLE ANIMATION ---
+        // Gentle Sway
+        if (currentVrm.humanoid) {
+            const spine = currentVrm.humanoid.getNormalizedBoneNode('spine');
+            const head = currentVrm.humanoid.getNormalizedBoneNode('head');
 
-            // Get Audio Volume & Frequencies
-            if (analyserRef.current) {
-                analyserRef.current.getByteFrequencyData(dataArray);
+            if (spine && head) {
+                // Subtle breathing/sway
+                spine.rotation.x = Math.sin(time * 1.0) * 0.02;
+                spine.rotation.y = Math.sin(time * 0.5) * 0.02;
 
-                // Volume (Broad)
-                let s = 0;
-                for(let i=0; i < 40; i++) s += dataArray[i];
-                volume = (s / 40) / 255;
-
-                // Bass (For 'ou')
-                let b = 0;
-                for(let i=0; i < 10; i++) b += dataArray[i];
-                bass = (b / 10) / 255;
-
-                // Treble (For 'ih')
-                let t = 0;
-                for(let i=100; i < 150; i++) t += dataArray[i];
-                treble = (t / 50) / 255;
+                // Head counter-sway to keep looking forward mostly
+                head.rotation.y = Math.sin(time * 0.5) * -0.01;
             }
 
-            // Sensitivities
-            const sensitivity = 3.5;
-            const threshold = 0.05;
+             // --- TALKING GESTURES ---
+            if (isSpeakingRef.current) { // Check real-time speaking state via ref
+                const leftUpperArm = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+                const rightUpperArm = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
 
-            const aa = Math.min(1.0, volume * sensitivity);
-            const ou = bass > threshold ? Math.min(1.0, bass * 2.0) : 0;
-            const ih = treble > threshold ? Math.min(1.0, treble * 3.0) : 0;
+                // Add some hand movement when speaking (simple sine waves on top of base pose)
+                // We check volume roughly by looking at currentAh which tracks volume
+                // But since we are inside the loop, let's use a time-based gesture if speaking
+
+                // Note: accurate volume based gesture requires moving logic below up or using ref
+                // For now, simple "if speaking" movement
+                if (leftUpperArm && rightUpperArm) {
+                     // Base rotation (from setup) + movement
+                     leftUpperArm.rotation.z = 1.3 + Math.sin(time * 3) * 0.05;
+                     rightUpperArm.rotation.z = -1.3 - Math.sin(time * 3) * 0.05;
+
+                     leftUpperArm.rotation.x = 0.15 + Math.sin(time * 2) * 0.05;
+                     rightUpperArm.rotation.x = 0.15 + Math.sin(time * 2.5) * 0.05;
+                }
+            }
+        }
+
+        // Lip Sync & Expressions
+        // @ts-ignore
+        if (currentVrm.expressionManager && lipSyncRef.current) {
+            const { aa, ih, ou, ee, uu, volume } = lipSyncRef.current.update();
 
             // Blink Logic
             const blink = Math.abs(Math.sin(time * 0.5)) > 0.99 ? 1 : 0;
@@ -221,16 +243,18 @@ export default function VrmViewer() {
             // @ts-ignore
             currentVrm.expressionManager.setValue('aa', aa);
             // @ts-ignore
-            currentVrm.expressionManager.setValue('ou', ou * 0.5); // Mix in O shape
+            currentVrm.expressionManager.setValue('ih', ih);
             // @ts-ignore
-            currentVrm.expressionManager.setValue('ih', ih * 0.5); // Mix in I shape
+            currentVrm.expressionManager.setValue('ou', ou);
+            // @ts-ignore
+            currentVrm.expressionManager.setValue('ee', ee);
 
             // @ts-ignore
             currentVrm.expressionManager.setValue('blink', blink);
 
              // Happy expression if talking
             // @ts-ignore
-            currentVrm.expressionManager.setValue('happy', volume > 0.1 ? 0.2 : 0);
+            currentVrm.expressionManager.setValue('happy', volume > 0.02 ? 0.3 : 0);
 
             // @ts-ignore
             currentVrm.expressionManager.update();

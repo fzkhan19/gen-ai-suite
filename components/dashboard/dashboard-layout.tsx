@@ -3,13 +3,20 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AvatarPanel } from "./avatar-panel";
 import { ImagePanel } from "./image-panel";
 import { VideoPanel } from "./video-panel";
 
 export function DashboardLayout() {
   const [activeTab, setActiveTab] = useState("image");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen w-full bg-black text-white bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -30,7 +37,7 @@ export function DashboardLayout() {
         </div>
 
         {/* Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col items-center space-y-8">
+        <Tabs id="dashboard-tabs" value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col items-center space-y-8">
           <TabsList className="bg-white/5 border border-white/10 p-1 h-auto rounded-full backdrop-blur-md">
             <TabsTrigger
               value="image"
