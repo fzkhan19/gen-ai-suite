@@ -18,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vertex AI Gen Suite",
   description: "Next.js Generative AI Dashboard",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({
