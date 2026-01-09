@@ -1,7 +1,7 @@
 
-import {VertexAI} from '@google-cloud/vertexai';
-import {GoogleAuth} from 'google-auth-library';
-import {NextResponse} from 'next/server';
+import { VertexAI } from '@google-cloud/vertexai';
+import { GoogleAuth } from 'google-auth-library';
+import { NextResponse } from 'next/server';
 
 // Initialize Vertex AI
 const PROJECT_ID = process.env.PROJECT_ID || 'your-project-id';
@@ -17,26 +17,33 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // Initialize with full Auth logic (Service Account or API Key)
+    const credentials = process.env.GOOGLE_CREDENTIALS_JSON
+        ? JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON)
+        : undefined;
+
     const googleAuth = new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        credentials
     });
 
     const vertex_ai = new VertexAI({
         project: PROJECT_ID,
         location: LOCATION,
         // @ts-ignore - Support API Key if available
-        googleAuthOptions: process.env.GOOGLE_API_KEY ? { apiKey: process.env.GOOGLE_API_KEY } : undefined
+        googleAuthOptions: process.env.GOOGLE_API_KEY
+            ? { apiKey: process.env.GOOGLE_API_KEY }
+            : { credentials }
     });
 
     switch (type) {
       case 'image':
-        return await generateImage(vertex_ai, prompt, params);
+        return await generateImage(vertex_ai, prompt, params, credentials);
       case 'video':
-        return await generateVideo(vertex_ai, prompt, params);
+        return await generateVideo(vertex_ai, prompt, params, credentials);
       case 'avatar':
         return await generateAvatar(vertex_ai, prompt);
       case 'chat':
-        return await generateChatResponse(vertex_ai, prompt);
+        return await generateChatResponse(vertex_ai, prompt, credentials);
       default:
         return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 });
     }
@@ -49,7 +56,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 }
 
-async function generateImage(vertexAI: VertexAI, prompt: string, params: any): Promise<NextResponse> {
+async function generateImage(vertexAI: VertexAI, prompt: string, params: any, credentials?: any): Promise<NextResponse> {
     const apiKey = process.env.GOOGLE_API_KEY;
     const projectId = process.env.PROJECT_ID || 'your-project-id'; // Fallback if not in env
     const location = 'us-central1';
@@ -60,7 +67,8 @@ async function generateImage(vertexAI: VertexAI, prompt: string, params: any): P
         // If no API Key, get Service Account Access Token
         if (!apiKey) {
              const googleAuth = new GoogleAuth({
-                scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+                credentials
             });
             const client = await googleAuth.getClient();
             accessToken = await client.getAccessToken();
@@ -117,7 +125,7 @@ async function generateImage(vertexAI: VertexAI, prompt: string, params: any): P
     }
 }
 
-async function generateVideo(vertexAI: VertexAI, prompt: string, params: any): Promise<NextResponse> {
+async function generateVideo(vertexAI: VertexAI, prompt: string, params: any, credentials?: any): Promise<NextResponse> {
     console.log("Starting Video Generation via REST (Veo 2.0)...");
 
     // Configuration
@@ -128,7 +136,8 @@ async function generateVideo(vertexAI: VertexAI, prompt: string, params: any): P
     try {
         // 1. Authentication
         const googleAuth = new GoogleAuth({
-            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            credentials
         });
         const client = await googleAuth.getClient();
         const accessToken = await client.getAccessToken();
@@ -258,7 +267,7 @@ async function generateAvatar(vertexAI: VertexAI, prompt: string): Promise<NextR
     }
 }
 
-async function generateChatResponse(vertexAI: VertexAI, messages: any[]): Promise<NextResponse> {
+async function generateChatResponse(vertexAI: VertexAI, messages: any[], credentials?: any): Promise<NextResponse> {
    try {
        // 1. Generate Text via Gemini
        const model = vertexAI.getGenerativeModel({
@@ -282,7 +291,8 @@ async function generateChatResponse(vertexAI: VertexAI, messages: any[]): Promis
 
        let token = null;
        const googleAuth = new GoogleAuth({
-           scopes: ['https://www.googleapis.com/auth/cloud-platform']
+           scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+           credentials
        });
        const client = await googleAuth.getClient();
        const accessToken = await client.getAccessToken();
