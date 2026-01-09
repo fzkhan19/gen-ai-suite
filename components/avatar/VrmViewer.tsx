@@ -10,7 +10,9 @@ import {GLTFLoader, OrbitControls} from "three-stdlib";
 
 export default function VrmViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { responseAudio, isSpeaking, setIsSpeaking } = useAvatarStore();
+  const responseAudio = useAvatarStore(state => state.responseAudio);
+  const isSpeaking = useAvatarStore(state => state.isSpeaking);
+  const setIsSpeaking = useAvatarStore(state => state.setIsSpeaking);
 
 
   // Audio Refs
@@ -94,7 +96,7 @@ export default function VrmViewer() {
         powerPreference: "high-performance"
     });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     containerRef.current.appendChild(renderer.domElement);
