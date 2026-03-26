@@ -102,8 +102,8 @@ export default function VrmViewer() {
     // --- THREE JS SETUP ---
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(30, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 20);
-    camera.position.set(0, 1.4, 2.5);
+    const camera = new THREE.PerspectiveCamera(35, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 20);
+    camera.position.set(0, 1.45, 1.1);
     const renderer = new THREE.WebGLRenderer({
         alpha: true,
         antialias: true,
@@ -183,7 +183,7 @@ export default function VrmViewer() {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.screenSpacePanning = true;
-    controls.target.set(0.0, 1.4, 0.0); // Focus on face
+    controls.target.set(0.0, 1.45, 0.0); // Focus on face
     controls.update();
 
     // --- ANIMATION LOOP ---

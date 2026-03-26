@@ -72,16 +72,38 @@ export function AvatarPanel() {
               if (event.results[i].isFinal) final_ += t;
               else interim += t;
           }
+
+          const fullTranscript = (final_ + interim).toLowerCase();
+
+          // ── WAKE WORD DETECTION: "ELARA" ──
+          if (fullTranscript.includes("elara") && !loading && avatarState !== 'speaking') {
+              // Trigger a "wake" visual effect? (could add to store)
+              console.log("[WakeWord] 'Elara' detected.");
+              const store = useAvatarStore.getState();
+              if (store.isSpeaking) store.stopSpeaking();
+          }
+
           if (interim) {
               setInterimText(interim);
               const store = useAvatarStore.getState();
               if (store.isSpeaking) store.stopSpeaking();
           }
+
           if (final_ && final_.trim().length > 1) {
               setInterimText("");
               const store = useAvatarStore.getState();
-              store.setInput(final_.trim());
-              setTimeout(() => useAvatarStore.getState().sendMessage(), 50);
+
+              // Strip "Elara" from the beginning if present for a cleaner prompt
+              let prompt = final_.trim();
+              if (prompt.toLowerCase().startsWith("elara")) {
+                  prompt = prompt.substring(5).trim();
+                  if (prompt.startsWith(",") || prompt.startsWith(".")) prompt = prompt.substring(1).trim();
+              }
+
+              if (prompt.length > 0) {
+                  store.setInput(prompt);
+                  setTimeout(() => useAvatarStore.getState().sendMessage(), 50);
+              }
           }
       };
 
@@ -98,11 +120,16 @@ export function AvatarPanel() {
       recognition.start();
       setIsRecording(true);
       setAvatarState('listening');
-      toast.success("Hands-free mode ON!");
+      toast.success("Elara is now listening for her name...");
   };
 
   useEffect(() => {
     setMounted(true);
+    // Auto-start wake-word listener on boot
+    const timer = setTimeout(() => {
+        if (!isRecording) toggleRecording();
+    }, 1500); // Small delay to ensure browser audio context is ready
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -127,15 +154,19 @@ export function AvatarPanel() {
   const currentState = stateConfig[avatarState];
 
   return (
-    <div className="relative h-full min-h-[500px]">
-      {/* ── Avatar Viewport (always full) ── */}
-      <div className="absolute inset-0 bg-black/40 border border-white/5">
+    <div className="fixed inset-0 overflow-hidden bg-[#050505] select-none">
+      {/* ── Avatar Viewport (Background Canvas) ── */}
+      <div className="absolute inset-0 z-0">
+         {/* Subtle Vignette & Depth */}
+         <div className="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
 
-         {/* State Badge */}
-         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black/80 border border-white/10">
-            <div className={`w-2 h-2 rounded-full ${currentState.color}`} />
-            {currentState.icon}
-            <span className="text-[10px] uppercase font-mono tracking-widest text-white/60">{currentState.label}</span>
+         {/* State Badge (Compact & Cornered) */}
+         <div className="absolute top-6 left-6 z-20 flex items-center gap-3 px-3 py-2 bg-black/60 border border-white/10 backdrop-blur-md">
+            <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)] ${currentState.color}`} />
+            <div className="flex flex-col">
+                <span className="text-[9px] uppercase font-mono tracking-[0.2em] text-white/40 leading-none mb-1">System_State</span>
+                <span className="text-[11px] uppercase font-bold tracking-widest text-white/90 leading-none">{currentState.label}</span>
+            </div>
          </div>
 
          {/* Mic & Chat Toggle */}
@@ -176,10 +207,10 @@ export function AvatarPanel() {
          )}
       </div>
 
-      {/* ── Slide-out Chat Panel ── */}
+      {/* ── Slide-out Chat Panel (Optimized for 1024x600) ── */}
       {showChat && (
-        <div className="absolute top-0 right-0 bottom-0 w-[380px] z-20">
-          <Card className="border-white/10 bg-[#0a0a0b]/95 backdrop-blur-sm shadow-none h-full flex flex-col overflow-hidden rounded-none">
+        <div className="absolute top-0 right-0 bottom-0 w-[320px] z-20 border-l border-white/10 shadow-2xl">
+          <Card className="border-none bg-black/60 backdrop-blur-xl h-full flex flex-col overflow-hidden rounded-none">
             <CardContent className="p-4 flex flex-col flex-1 min-h-0 gap-4">
               <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
                 <div className="flex items-center gap-3">
