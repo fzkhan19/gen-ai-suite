@@ -1,27 +1,49 @@
-import { AvatarPanel } from "@/components/dashboard/avatar-panel";
+import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import "./App.css";
+import reactLogo from "./assets/react.svg";
 
 function App() {
+  const [greetMsg, setGreetMsg] = useState("");
+  const [name, setName] = useState("");
+
+  async function greet() {
+    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+    setGreetMsg(await invoke("greet", { name }));
+  }
+
   return (
-    <main className="w-full min-h-screen relative bg-[#09090b] text-white flex flex-col items-center font-sans tracking-tight">
+    <main className="container">
+      <h1>Welcome to Tauri + React</h1>
 
-      {/* Extremely Minimal Grid Background */}
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-
-      <div className="z-10 w-full max-w-7xl h-screen flex flex-col p-6">
-         <header className="mb-6 w-full border-b border-white/10 pb-4 flex justify-between items-end">
-            <div>
-               <h1 className="text-xl font-medium tracking-wide text-white/90 uppercase">
-                  Sys.<span className="text-emerald-400">Terminal</span>
-               </h1>
-               <p className="text-xs font-mono text-white/40 mt-1">Av.Interface v1.0.0 // READY</p>
-            </div>
-         </header>
-
-         <div className="flex-1 min-h-[500px]">
-            <AvatarPanel />
-         </div>
+      <div className="row">
+        <a href="https://vite.dev" target="_blank">
+          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
+        </a>
+        <a href="https://tauri.app" target="_blank">
+          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
       </div>
+      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+
+      <form
+        className="row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          greet();
+        }}
+      >
+        <input
+          id="greet-input"
+          onChange={(e) => setName(e.currentTarget.value)}
+          placeholder="Enter a name..."
+        />
+        <button type="submit">Greet</button>
+      </form>
+      <p>{greetMsg}</p>
     </main>
   );
 }

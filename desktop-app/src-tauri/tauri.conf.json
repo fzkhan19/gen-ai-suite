@@ -12,8 +12,8 @@
   "app": {
     "windows": [
       {
-        "title": "Local AI Avatar",
-        "width": 1000,
+        "title": "desktop-app",
+        "width": 800,
         "height": 600
       }
     ],
